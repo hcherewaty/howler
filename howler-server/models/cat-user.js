@@ -36,6 +36,27 @@ const catUserSchema = new mongoose.Schema({
     }
 });
 
+catUserSchema.pre('save', async function(next){
+    try {
+        if(!this.isModified('password')){
+            return next();
+        }
+        let hashedpassword = await bcrypt.hash(this.password, 10);
+        this.password = hashedpassword;
+    } catch(err) {
+        return next(err);
+    }
+});
+
+catUserSchema.method.comparePasswords = async function(userPasswordInput, next){
+    try {
+        let isMatch = await bcrypt.compare(userPasswordInput, this.password);
+        return isMatch;
+    } catch(err){
+        return next(err);
+    }
+};
+
 const CatUser = mongoose.model('CatUser', catUserSchema);
 
 module.exports = CatUser;

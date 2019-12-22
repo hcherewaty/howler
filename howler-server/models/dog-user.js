@@ -55,6 +55,29 @@ const dogUserSchema = new mongoose.Schema({
     }
 });
 
+//before saving to db, check if pw is changed and if not save, otherwise hash pw.
+dogUserSchema.pre('save', async function(next){
+    try {
+        if(!this.isModified('password')){
+            return next();
+        }
+        let hashedPassword = await bcrypt.hash(this.password, 10);
+        this.password = hashedPassword;
+    } catch(err) {
+        return next(err);
+    }
+});
+
+//compare pw from user with pw saved in db.
+dogUserSchema.method.comparePasswords = async function(userPasswordInput, next){
+    try {
+        let isMatch = await bcrypt.compare(userPasswordInput, this.password);
+        return isMatch;
+    } catch(err) {
+        return next(err);
+    }
+};
+
 const DogUser = mongoose.model('DogUser', dogUserSchema);
 
 module.exports = DogUser;
